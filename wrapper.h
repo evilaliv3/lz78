@@ -1,5 +1,5 @@
 /*
-* Basic implementation of LZ78 compression alghorithm 
+* Basic implementation of LZ78 compression algorithm 
 *
 * Copyright (C) 2010 evilaliv3 <giovanni.pellerano@evilaliv3.org>
 *
@@ -50,10 +50,10 @@ typedef struct __wrapper wrapper;
    w_type   type of algorithm
    w_argv   additional parameter
  */
-wrapper *wrapper_new(uint8_t w_mode, uint8_t w_type, char *w_argv);
+wrapper* wrapper_new(uint8_t w_mode, uint8_t w_type, char* w_argv);
 
 /* Deallocates a wrapper */
-void wrapper_destroy(wrapper *);
+void wrapper_destroy(wrapper* w);
 
 /* Execute the function associated with the wrapper (compress/decompress)
    Return:
@@ -68,17 +68,17 @@ void wrapper_destroy(wrapper *);
      WRAPPER_ERROR_DECOMPRESS unable to decompress input data
      WRAPPER_ERROR_GENERIC    algorithm-dependent error
  */
-uint8_t wrapper_exec(wrapper *w, char *in, char *out);
+uint8_t wrapper_exec(wrapper* w, char* in, char* out);
 
 /* Return a positive constant associated to a particular algorithm
    (UNKNOWN_ALGORITHM if doesn't exist)
  */
-uint8_t get_algorithm(char *type);
+uint8_t get_algorithm(char* type);
 
 /* Return an integer representing the given size
    (K = KBytes, M = MBytes)
  */
-int byte_size(char *size);
+int byte_size(char* size);
 
 /* Print last wrapper error occurred into standard error stream */
 void wrapper_perror();

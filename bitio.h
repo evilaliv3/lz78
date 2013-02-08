@@ -1,5 +1,5 @@
 /*
-* Basic implementation of LZ78 compression alghorithm 
+* Basic implementation of LZ78 compression algorithm 
 *
 * Copyright (C) 2010 evilaliv3 <giovanni.pellerano@evilaliv3.org>
 *
@@ -39,15 +39,15 @@ typedef struct __bit_file bit_file;
 bit_file* bit_open(int fd, int mode, UINTMAX_T bufsize);
 
 /* Does a memory read (occasionally an i/o read) */
-int bit_read(bit_file *bf, char *base, UINTMAX_T n_bits, uint8_t ofs);
+int bit_read(bit_file* bf, char* base, UINTMAX_T n_bits, uint8_t ofs);
 
 /* Does a memory write (occasionally an i/o flush) */
-int bit_write(bit_file *bf, const char *base, UINTMAX_T n_bits, uint8_t ofs);
+int bit_write(bit_file* bf, const char* base, UINTMAX_T n_bits, uint8_t ofs);
 
 /* Effectively swap out the buffer into memory */
-int bit_flush(bit_file *bf);
+int bit_flush(bit_file* bf);
 
 /* Relases the resources allocated by the bit_file */
-int bit_close(bit_file *bf);
+int bit_close(bit_file* bf);
 
 #endif /* __BITIO_H */

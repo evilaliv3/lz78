@@ -43,7 +43,7 @@ UINTMAX_T max_index() {
 
 bit_file* bit_open(int fd, int mode, UINTMAX_T buff_size) {
 
-    bit_file *bfp;
+    bit_file* bfp;
     int ret;
 
     if (mode != ACCESS_READ && mode != ACCESS_WRITE)
@@ -66,7 +66,6 @@ bit_file* bit_open(int fd, int mode, UINTMAX_T buff_size) {
     bfp = (bit_file*) calloc(1, sizeof(bit_file) + buff_size / 8);
     if (bfp == NULL) {
         close(fd);
-        return NULL;
     } else {
         bfp->fd = fd;
         bfp->mode = mode;
@@ -77,13 +76,12 @@ bit_file* bit_open(int fd, int mode, UINTMAX_T buff_size) {
     return bfp;
 }
 
-int bit_read(bit_file *bfp, char *buff_out, UINTMAX_T n_bits, uint8_t ofs) {
-
-    uint8_t *base;
+int bit_read(bit_file* bfp, char* buff_out, UINTMAX_T n_bits, uint8_t ofs) {
+    uint8_t* base;
     uint8_t mask;
     uint8_t r_mask;
     uint8_t writebit;
-    uint8_t *readptr;
+    const uint8_t* readptr;
     UINTMAX_T buff_ready_bytes;
     UINTMAX_T bits_read = 0;
     UINTMAX_T bits_read_total = 0;
@@ -110,7 +108,6 @@ int bit_read(bit_file *bfp, char *buff_out, UINTMAX_T n_bits, uint8_t ofs) {
     aligned = (mask == 1 && (w_start % 8 == 0)) ? 1 : 0;
 
     while (n_bits > 0) {
-
         /* Buffer refill if needed */
         if (w_len == 0) {
             c = read(bfp->fd, bfp->buff, buff_size / 8);
@@ -121,8 +118,9 @@ int bit_read(bit_file *bfp, char *buff_out, UINTMAX_T n_bits, uint8_t ofs) {
                 } else {
                     return -1;
                 }
-            } else if (c == 0)
+            } else if (c == 0) {
                 break;
+            }
 
             w_start = 0;
             w_len = c * 8;
@@ -141,7 +139,6 @@ int bit_read(bit_file *bfp, char *buff_out, UINTMAX_T n_bits, uint8_t ofs) {
             w_len -= bits_read;
             n_bits -= bits_read;
             bits_read_total += bits_read;
-
         } else {
             /* Single bit read */
             r_mask = 1 << w_start % 8;
@@ -154,13 +151,13 @@ int bit_read(bit_file *bfp, char *buff_out, UINTMAX_T n_bits, uint8_t ofs) {
             }
 
             w_start = ((w_start + 1) % buff_size);
-            w_len--;
-            n_bits--;
-            bits_read_total++;
+            --w_len;
+            --n_bits;
+            ++bits_read_total;
 
             if (mask == 0x80) {
                 mask = 1;
-                base++;
+                ++base;
                 aligned = (mask == 1 && (w_start % 8 == 0)) ? 1 : 0;
             } else {
                 mask <<= 1;
@@ -176,17 +173,16 @@ int bit_read(bit_file *bfp, char *buff_out, UINTMAX_T n_bits, uint8_t ofs) {
     return bits_read_total;
 }
 
-int bit_write(bit_file *bfp, const char *buff_in, UINTMAX_T n_bits, uint8_t ofs) {
-
-    const uint8_t *base;
+int bit_write(bit_file* bfp, const char* buff_in, UINTMAX_T n_bits, uint8_t ofs) {
+    UINTMAX_T ret = 0;
+    const uint8_t* base;
     uint8_t mask;
     uint8_t readbit;
-    uint8_t *writeptr;
+    uint8_t* writeptr;
     UINTMAX_T pos;
     UINTMAX_T buff_free_bits;
     UINTMAX_T buff_free_bytes;
     UINTMAX_T bits_written = 0;
-    UINTMAX_T bits_written_total = 0;
     uint8_t aligned;
 
     if (bfp == NULL || buff_in == NULL || n_bits < 0 || ofs < 0 || ofs > 7)
@@ -196,7 +192,7 @@ int bit_write(bit_file *bfp, const char *buff_in, UINTMAX_T n_bits, uint8_t ofs)
         return -1;
 
     mask = 1 << ofs;
-    base = (uint8_t*) buff_in;
+    base = (uint8_t*)buff_in;
 
     pos = bfp->w_start + bfp->w_len;
     buff_free_bits = bfp->buff_size - bfp->w_len;
@@ -205,7 +201,6 @@ int bit_write(bit_file *bfp, const char *buff_in, UINTMAX_T n_bits, uint8_t ofs)
     aligned = (mask == 1 && (pos % 8 == 0)) ? 1 : 0;
 
     while (n_bits > 0) {
-
         writeptr = (uint8_t*)&(bfp->buff) + pos / 8;
 
         if (aligned && buff_free_bits > 7 && n_bits >= buff_free_bits) {
@@ -218,9 +213,8 @@ int bit_write(bit_file *bfp, const char *buff_in, UINTMAX_T n_bits, uint8_t ofs)
             pos += bits_written;
             bfp->w_len += bits_written;
             n_bits -= bits_written;
-            bits_written_total += bits_written;
+            ret += bits_written;
             buff_free_bits -= bits_written;
-
         } else {
             /* Single bit write */
             readbit = (*base & mask) ? 1 : 0;
@@ -232,17 +226,17 @@ int bit_write(bit_file *bfp, const char *buff_in, UINTMAX_T n_bits, uint8_t ofs)
 
             if (mask == 0x80) {
                 mask = 1;
-                base++;
+                ++base;
                 aligned = (mask == 1 && (pos % 8 == 0)) ? 1 : 0;
             } else {
                 mask <<= 1;
             }
 
-            pos++;
-            bfp->w_len++;
-            n_bits--;
-            bits_written_total++;
-            buff_free_bits--;
+            ++pos;
+            ++(bfp->w_len);
+            --(n_bits);
+            --buff_free_bits;
+            ++ret;
         }
 
         /* Flush if needed */
@@ -250,31 +244,32 @@ int bit_write(bit_file *bfp, const char *buff_in, UINTMAX_T n_bits, uint8_t ofs)
             if (bit_flush(bfp) == -1)
                 return -1;
             if (bfp->w_len != 0)
-                return bits_written_total;
+                return ret;
             pos = bfp->w_start + bfp->w_len;
             buff_free_bits = bfp->buff_size;
         }
 
     }
 
-    return bits_written_total;
+    return ret;
 }
 
-int bit_flush(bit_file *bfp) {
-    UINTMAX_T ret, count, written;
-    uint8_t *base;
+int bit_flush(bit_file* bfp) {
+    UINTMAX_T count;
+    UINTMAX_T written;
+    UINTMAX_T n;
+    uint8_t* base;
 
     if (bfp == NULL)
         return -1;
 
-    ret = 0;
     count = bfp->w_len / 8;
     written = 0;
     base = (uint8_t*) bfp->buff + bfp->w_start / 8;
 
     while (count > 0) {
-        ret = write(bfp->fd, base, count);
-        if (ret == -1) {
+        n = write(bfp->fd, base, count);
+        if (n == -1) {
             if (errno == EAGAIN) {
                 errno = 0;
                 break;
@@ -282,9 +277,9 @@ int bit_flush(bit_file *bfp) {
                 return -1;
             }
         }
-        base += ret;
-        written += ret;
-        count -= ret;
+        base += n;
+        written += n;
+        count -= n;
     }
 
     bfp->w_start = (bfp->w_start + written * 8) % bfp->buff_size;
@@ -292,7 +287,7 @@ int bit_flush(bit_file *bfp) {
     return 0;
 }
 
-int bit_close(bit_file *bfp) {
+int bit_close(bit_file* bfp) {
     int fd;
 
     if (bfp == NULL)
@@ -305,5 +300,6 @@ int bit_close(bit_file *bfp) {
 
     bit_flush(bfp);
     free(bfp);
-    return close(fd);
+    close(fd);
+    return 0;
 }

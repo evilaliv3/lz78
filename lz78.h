@@ -1,5 +1,5 @@
 /*
-* Basic implementation of LZ78 compression alghorithm 
+* Basic implementation of LZ78 compression algorithm 
 *
 * Copyright (C) 2010 evilaliv3 <giovanni.pellerano@evilaliv3.org>
 *
@@ -55,16 +55,16 @@ lz78_instance* lz78_new(uint8_t cmode, uint32_t dsize);
    arg:     current instance of compressor obtained by invoking lz78_init()
    Return:  one of defined lz78-level return codes
  */
-uint8_t lz78_compress(lz78_instance *lz78, int fd_in, int fd_out);
+uint8_t lz78_compress(lz78_instance* lz78, int fd_in, int fd_out);
 
 /* Decompress the input stream by sending the result to the output stream
    arg:     current instance of compressor obtained by invoking lz78_init()
    Return:  one of defined lz78-level return codes
  */
-uint8_t lz78_decompress(lz78_instance *lz78, int fd_in, int fd_out);
+uint8_t lz78_decompress(lz78_instance* lz78, int fd_in, int fd_out);
 
 
 /* Deallocate current instance */
-void lz78_destroy(lz78_instance *lz78);
+void lz78_destroy(lz78_instance* lz78);
 
 #endif /* __LZ78_H */

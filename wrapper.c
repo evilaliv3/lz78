@@ -42,7 +42,7 @@ const algorithm algo_list[] = {
 struct __wrapper {
     uint8_t type;      /* Algorithm used to compress or decompress data */
     uint8_t mode;      /* Flag indicating compress/decompress mode */
-    void *data;        /* Opaque structure representing the algorithm */
+    void* data;        /* Opaque structure representing the algorithm */
 };
 
 /* Global variable representing the current error stored */
@@ -72,26 +72,29 @@ uint8_t wrapper_return(uint8_t code) {
     return code;
 }
 
-uint8_t get_algorithm(char *type) {
+uint8_t get_algorithm(char* type) {
     uint8_t i = 0;
     while (algo_list[i].name != NULL) {
         if (strcmp(type, algo_list[i].name) == 0)
             return algo_list[i].type;
-        i++;
+        ++i;
     }
     return UNKNOWN_ALGORITHM;
 }
 
-int byte_size(char *size) {
+int byte_size(char* size) {
     int n;
-    if (size == NULL) return 0;
+
+    if (size == NULL)
+        return 0;
+
     n = atoi(size);
 
     switch (size[strlen(size) - 1]) {
         case 'K':
             n <<= 10;
             break;
-	
+    
         case 'M':
             n <<= 20;
             break;
@@ -157,9 +160,8 @@ void wrapper_perror() {
     }
 }
 
-wrapper* wrapper_new(uint8_t w_mode, uint8_t w_type, char *argv) {
-    wrapper *w;
-    w = malloc(sizeof(wrapper));
+wrapper* wrapper_new(uint8_t w_mode, uint8_t w_type, char* argv) {
+    wrapper* w = malloc(sizeof(wrapper));
     if (w == NULL)
         return NULL;
 
@@ -184,7 +186,7 @@ wrapper* wrapper_new(uint8_t w_mode, uint8_t w_type, char *argv) {
     }
 }
 
-void wrapper_destroy(wrapper *w) {
+void wrapper_destroy(wrapper* w) {
     if (w == NULL)
         return;
 
@@ -199,9 +201,10 @@ void wrapper_destroy(wrapper *w) {
     free(w);
 }
 
-uint8_t wrapper_compress(wrapper *w, char *input, char *output) {
-    int fd_in, fd_out;
+uint8_t wrapper_compress(wrapper* w, char* input, char* output) {
     uint8_t ret;
+    int fd_in;
+    int fd_out;
 
     switch (w->type) {
         case LZ78_ALGORITHM:
@@ -234,9 +237,10 @@ uint8_t wrapper_compress(wrapper *w, char *input, char *output) {
     }
 }
 
-uint8_t wrapper_decompress(wrapper *w, char *input, char *output) {
-    int fd_in, fd_out;
+uint8_t wrapper_decompress(wrapper* w, char* input, char* output) {
     uint8_t ret;
+    int fd_in;
+    int fd_out;
 
     switch (w->type) {
         case LZ78_ALGORITHM:
@@ -269,8 +273,8 @@ uint8_t wrapper_decompress(wrapper *w, char *input, char *output) {
     }
 }
 
-uint8_t wrapper_exec(wrapper *w, char *input, char *output) {
-    int ret;
+uint8_t wrapper_exec(wrapper* w, char* input, char* output) {
+    uint8_t ret;
     if (w->mode == WRAPPER_MODE_COMPRESS) {
         for (;;) {
             ret = wrapper_compress(w, input, output);

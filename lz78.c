@@ -55,7 +55,7 @@ typedef struct __ht_entry ht_entry;
 
 /* Dictionary of the compressor implemented as an hash table */
 struct __ht_dictionary {
-    ht_entry *root;           /* Root node of the dictionary */
+    ht_entry* root;           /* Root node of the dictionary */
     uint32_t cur_node;        /* Current position inside the dictionary */
     uint32_t prev_node;       /* Pointer to the father of cur_node */
     uint32_t d_size;          /* Size of the dictionary */
@@ -70,8 +70,8 @@ typedef struct __ht_dictionary ht_dictionary;
 struct __lz78_c {
     uint8_t completed;        /* Termination flag */
     uint32_t d_size;          /* Size of the dictionaries */
-    ht_dictionary *main;      /* Main dictionary */
-    ht_dictionary *secondary; /* Secondary dictionary */
+    ht_dictionary* main;      /* Main dictionary */
+    ht_dictionary* secondary; /* Secondary dictionary */
     uint32_t bitbuf;          /* Buffer containing bits not yet written */
     uint32_t n_bits;          /* Number of valid bits in the buffer */
 };
@@ -90,7 +90,7 @@ typedef struct __entry entry;
 
 /* Dictionary of the decompressor */
 struct __dictionary {
-    entry *root;              /* Root node of the dictionary */
+    entry* root;              /* Root node of the dictionary */
     uint32_t d_size;          /* Size of the dictionray */
     uint32_t d_thr;           /* Threshold for activation of secondary dictionary */
     uint32_t d_min;           /* Minimum size of the dictionary */
@@ -106,8 +106,8 @@ typedef struct __dictionary dictionary;
 /* State of the decompressor */
 struct __lz78_d {
     uint8_t completed;        /* Termination flag */
-    dictionary *main;         /* Main dictionary */
-    ht_dictionary *secondary; /* Secondary dictionary */
+    dictionary* main;         /* Main dictionary */
+    ht_dictionary* secondary; /* Secondary dictionary */
     uint32_t bitbuf;          /* Buffer containing bits not yet written */
     uint32_t n_bits;          /* Number of valid bits contained in the buffer */
 };
@@ -132,63 +132,64 @@ ht_dictionary* ht_dictionary_new(uint32_t d_size);
      0   a new entry have been put in the dictionary
     -1   switch the current node
  */
-int ht_dictionary_update(ht_dictionary *d, uint16_t label);
+int ht_dictionary_update(ht_dictionary* d, uint16_t label);
 
 /* Reset the dictionary associated to the given compressor */
-void ht_dictionary_reset(ht_dictionary *d);
+void ht_dictionary_reset(ht_dictionary* d);
 
 /* Destroy the given ht_dictionary object */
-void ht_dictionary_destroy(ht_dictionary *d);
+void ht_dictionary_destroy(ht_dictionary* d);
 
 /* Create a new dictionary to be used for the decompression */
-dictionary *dictionary_new(uint32_t d_size);
+dictionary* dictionary_new(uint32_t d_size);
 
 /* Update the internal state of the dictionary */
-void dictionary_update(dictionary *d, uint32_t code);
+void dictionary_update(dictionary* d, uint32_t code);
 
 /* Reset the dictionary associated to the given decompressor */
-void dictionary_reset(dictionary *d);
+void dictionary_reset(dictionary* d);
 
 /* Destroy the given dictionary object */
-void dictionary_destroy(dictionary *d);
+void dictionary_destroy(dictionary* d);
 
 /* Compress the input byte and modifiy the state of the dictionary */
-void compress_byte(lz78_c *o, int c_in);
+void compress_byte(lz78_c* o, int c_in);
 
 /* Decompress the input code and modify the state of the dictionary */
-int decompress_code(lz78_d *o, uint32_t code);
+int decompress_code(lz78_d* o, uint32_t code);
 
 uint8_t bitlen(uint32_t i) {
     uint8_t n = 0;
     while (i) {
-        n++;
+        ++n;
         i >>= 1;
     }
     return n;
 }
 
 ht_dictionary* ht_dictionary_new(uint32_t d_size) {
-    ht_dictionary *dict = malloc(sizeof (ht_dictionary));
+    ht_dictionary* dict = malloc(sizeof(ht_dictionary));
     if (dict == NULL)
         return NULL;
 
     d_size = DICT_LIMIT(d_size);
-    dict->root = calloc(1, sizeof (ht_entry) * d_size);
+    dict->root = calloc(1, sizeof(ht_entry) * d_size);
     if (dict->root == NULL) {
         free(dict);
         return NULL;
+    } else {
+        dict->d_size = d_size;
+        dict->d_thr = DICT_SIZE_THRESHOLD(d_size);
+        dict->d_next = DICT_SIZE_MIN;
+        dict->cur_node = -1;
+        return dict;
     }
-
-    dict->d_size = d_size;
-    dict->d_thr = DICT_SIZE_THRESHOLD(d_size);
-    dict->d_next = DICT_SIZE_MIN;
-    dict->cur_node = -1;
-    return dict;
 }
 
-int ht_dictionary_update(ht_dictionary *d, uint16_t label) {
+int ht_dictionary_update(ht_dictionary* d, uint16_t label) {
     uint8_t i;
-    uint32_t key, hash;
+    uint32_t key;
+    uint32_t hash;
     d->prev_node = d->cur_node;
 
     if (d->cur_node == -1) {
@@ -199,7 +200,7 @@ int ht_dictionary_update(ht_dictionary *d, uint16_t label) {
     /* Bernstein hash function */
     key = (label << bitlen(d->d_size)) + d->cur_node;
     hash = 0;
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 4; ++i) {
         hash = ((hash << 5) + hash) + (key & 0xFF);
         key >>= 8;
     }
@@ -228,31 +229,30 @@ int ht_dictionary_update(ht_dictionary *d, uint16_t label) {
     /* Update current node */
     d->cur_node = label;
     /* Update next symbol */
-    d->d_next++;
+    ++(d->d_next);
 
     return 0;
 }
 
-void ht_dictionary_reset(ht_dictionary *d) {
-    memset(d->root, 0, sizeof (ht_entry) * d->d_size);
+void ht_dictionary_reset(ht_dictionary* d) {
+    memset(d->root, 0, sizeof(ht_entry) * d->d_size);
     d->d_next = DICT_SIZE_MIN;
     d->cur_node = -1;
 }
 
-void ht_dictionary_destroy(ht_dictionary *d) {
-    if (d != NULL) {
+void ht_dictionary_destroy(ht_dictionary* d) {
+    if (d != NULL)
         free(d);
-    }
 }
 
 dictionary* dictionary_new(uint32_t d_size) {
     uint16_t i;
-    dictionary *dict = malloc(sizeof (dictionary) + d_size);
+    dictionary* dict = malloc(sizeof(dictionary) + d_size);
     if (dict == NULL)
         return NULL;
 
     d_size = DICT_LIMIT(d_size);
-    dict->root = malloc(sizeof (entry) * d_size);
+    dict->root = malloc(sizeof(entry) * d_size);
     if (dict->root == NULL) {
         free(dict);
         return NULL;
@@ -262,14 +262,14 @@ dictionary* dictionary_new(uint32_t d_size) {
     dict->d_thr = DICT_SIZE_THRESHOLD(d_size);
     dict->d_min = DICT_SIZE_MIN;
     dict->d_next = DICT_SIZE_MIN;
-    for (i = 0; i < DICT_SIZE_MIN; i++) {
+    for (i = 0; i < DICT_SIZE_MIN; ++i) {
         dict->root[i].parent = 0;
         dict->root[i].label = i;
     }
     return dict;
 }
 
-void dictionary_update(dictionary *d, uint32_t code) {
+void dictionary_update(dictionary* d, uint32_t code) {
     uint32_t d_size = d->d_size - 1;
     uint32_t d_next = d->d_next;
     uint32_t d_min = d->d_min;
@@ -296,33 +296,33 @@ void dictionary_update(dictionary *d, uint32_t code) {
     d->n_bytes = d_size - i;
     d->offset = d_size + 1 - d->n_bytes;
     d->root[d_next].parent = code;
-    d->d_next++;
+    ++(d->d_next);
 }
 
-void dictionary_reset(dictionary *d) {
+void dictionary_reset(dictionary* d) {
     d->d_min = DICT_SIZE_MIN;
     d->d_next = DICT_SIZE_MIN;
 }
 
-void dictionary_destroy(dictionary *d) {
+void dictionary_destroy(dictionary* d) {
     if (d != NULL) {
         free(d->root);
         free(d);
     }
 }
 
-void compress_byte(lz78_c *o, int c_in) {
+void compress_byte(lz78_c* o, int c_in) {
     /* Optimization pointers */
-    ht_dictionary *d_main = o->main;
-    ht_dictionary *d_sec = o->secondary;
+    ht_dictionary* d_main = o->main;
+    ht_dictionary* d_sec = o->secondary;
 
     switch(d_main->cur_node) {
-	case DICT_CODE_START:
+    case DICT_CODE_START:
             o->bitbuf = d_main->d_size;
             o->n_bits = bitlen(DICT_SIZE_MAX);
             d_main->cur_node = -1;
             break;
-	case DICT_CODE_EOF:
+    case DICT_CODE_EOF:
             o->bitbuf = d_main->cur_node;
             o->n_bits = bitlen(d_main->d_next);
             d_main->cur_node = DICT_CODE_STOP;
@@ -330,7 +330,7 @@ void compress_byte(lz78_c *o, int c_in) {
         case DICT_CODE_STOP:
             o->completed = 1;
             return;
-	default:
+    default:
             break;
     }
 
@@ -359,23 +359,23 @@ void compress_byte(lz78_c *o, int c_in) {
         ht_dictionary_update(d_sec, c_in);
 }
 
-int decompress_code(lz78_d *o, uint32_t code) {
+int decompress_code(lz78_d* o, uint32_t code) {
     uint32_t i;
     int c_in;
     /* Optimization pointers */
-    dictionary *d_main = o->main;
-    ht_dictionary *d_sec = o->secondary;
+    dictionary* d_main = o->main;
+    ht_dictionary* d_sec = o->secondary;
 
     switch(code) {
-	case DICT_CODE_EOF:
+    case DICT_CODE_EOF:
             o->completed = 1;
             return 0;
-	case DICT_CODE_START:
+    case DICT_CODE_START:
         case DICT_CODE_SIZE:
             d_main->d_next = DICT_SIZE_MAX;
             o->n_bits = 0;
             return 0;
-	default:
+    default:
             /* Initial operations */
             if (d_main->d_next == DICT_SIZE_MAX) {
                 dictionary_destroy(d_main);
@@ -406,7 +406,7 @@ int decompress_code(lz78_d *o, uint32_t code) {
 
     /* Update of secondary if threshold is reached */
     if (d_main->d_next > d_main->d_thr) {
-        for (i = 0; i < d_main->n_bytes; i++) {
+        for (i = 0; i < d_main->n_bytes; ++i) {
             c_in = (uint8_t) d_main->bytebuf[d_main->offset + i];
             ht_dictionary_update(d_sec, c_in);
         }
@@ -417,13 +417,13 @@ int decompress_code(lz78_d *o, uint32_t code) {
         dictionary_reset(d_main);
         d_main->d_min = d_sec->d_next;
         d_main->d_next = d_sec->d_next;
-        for (i = 0; i < d_sec->d_size && d_sec->d_next; i++) {
+        for (i = 0; i < d_sec->d_size && d_sec->d_next; ++i) {
             if (d_sec->root[i].used) {
                 d_main->root[d_sec->root[i].child].parent =
                         d_sec->root[i].parent;
                 d_main->root[d_sec->root[i].child].label =
                         d_sec->root[i].label;
-                d_sec->d_next--;
+                --(d_sec->d_next);
             }
         }
         ht_dictionary_reset(d_sec);
@@ -432,12 +432,12 @@ int decompress_code(lz78_d *o, uint32_t code) {
 }
 
 lz78_instance* lz78_new(uint8_t cmode, uint32_t dsize) {
-    lz78_instance *i;
-    lz78_c *c;
-    lz78_d *d;
+    lz78_instance* i;
+    lz78_c* c;
+    lz78_d* d;
 
     int max_dim = (sizeof(lz78_c) > sizeof(lz78_d)) ? sizeof(lz78_c) : sizeof(lz78_d);
-    i = malloc(sizeof (lz78_instance) + max_dim);
+    i = malloc(sizeof(lz78_instance) + max_dim);
     if (i == NULL)
         return NULL;
     i->mode = cmode;
@@ -479,10 +479,10 @@ lz78_instance* lz78_new(uint8_t cmode, uint32_t dsize) {
     }
 }
 
-uint8_t lz78_compress(lz78_instance *lz78, int fd_in, int fd_out) {
-    FILE *in;
-    bit_file *out;
-    lz78_c *o;
+uint8_t lz78_compress(lz78_instance* lz78, int fd_in, int fd_out) {
+    FILE* in;
+    bit_file* out;
+    lz78_c* o;
     int bits;
     int c_in;
 
@@ -534,11 +534,11 @@ uint8_t lz78_compress(lz78_instance *lz78, int fd_in, int fd_out) {
     }
 }
 
-uint8_t lz78_decompress(lz78_instance *lz78, int fd_in, int fd_out) {
-    bit_file *in;
-    FILE *out;
-    lz78_d *o;
-    dictionary *d_main;
+uint8_t lz78_decompress(lz78_instance* lz78, int fd_in, int fd_out) {
+    bit_file* in;
+    FILE* out;
+    lz78_d* o;
+    dictionary* d_main;
     uint32_t bits, written;
     int ret;
 
@@ -556,10 +556,9 @@ uint8_t lz78_decompress(lz78_instance *lz78, int fd_in, int fd_out) {
     if (out == NULL)
         return LZ78_ERROR_WRITE;
 
-    o = (lz78_d*)&lz78->state;
+    o = (lz78_d*) &lz78->state;
 
     for (;;) {
-
         /* Optimization pointer (MUST be init every cycle) */
         d_main = o->main;
         if (d_main->n_bytes) {
@@ -573,8 +572,9 @@ uint8_t lz78_decompress(lz78_instance *lz78, int fd_in, int fd_out) {
                     if (errno == EAGAIN) {
                         errno = 0;
                         return LZ78_ERROR_EAGAIN;
-                    } else
+                    } else {
                         return LZ78_ERROR_WRITE;
+                    }
                 }
                 written += ret;
             }
@@ -594,7 +594,6 @@ uint8_t lz78_decompress(lz78_instance *lz78, int fd_in, int fd_out) {
                 return LZ78_ERROR_EAGAIN;
         }
 
-
         ret = decompress_code(o, o->bitbuf);
         if (ret < 0) {
             switch(ret) {
@@ -609,7 +608,6 @@ uint8_t lz78_decompress(lz78_instance *lz78, int fd_in, int fd_out) {
             fflush(out);
             return LZ78_SUCCESS;
         }
-
     }
 }
 

@@ -23,7 +23,7 @@
 #include "wrapper.h"
 
 /* Usage program help */
-void help(char *argv[]) {
+void help(char* argv[]) {
     fprintf(stderr,
             "Usage: %s [Options]\n\n"
             "Options:\n"
@@ -41,11 +41,11 @@ void help(char *argv[]) {
 }
 
 
-int main(int argc, char *argv[]) {
-    char *name_in = NULL;
-    char *name_out = NULL;
-    char *w_argv = NULL;
-    wrapper *w;
+int main(int argc, char* argv[]) {
+    char* name_in = NULL;
+    char* name_out = NULL;
+    char* w_argv = NULL;
+    wrapper* w;
     int bsize = B_SIZE_DEFAULT;
     int opt, ret;
     uint8_t w_mode = WRAPPER_MODE_COMPRESS;
